@@ -206,6 +206,118 @@ func printRelevantHeaders(r *fetcher.Result) {
 	}
 }
 
+func PrintJSONLDDetail(data *parser.SEOData) {
+	if len(data.JSONLDBlocks) == 0 {
+		fmt.Println()
+		dim.Println("  No JSON-LD structured data found.")
+		return
+	}
+
+	fmt.Println()
+	bold.Println("╔══════════════════════════════════════════════════════════════════╗")
+	bold.Println("║  JSON-LD Structured Data                                       ║")
+	bold.Println("╚══════════════════════════════════════════════════════════════════╝")
+
+	for _, block := range data.JSONLDBlocks {
+		if graph, ok := block["@graph"].([]interface{}); ok {
+			for _, item := range graph {
+				if obj, ok := item.(map[string]interface{}); ok {
+					printJSONLDNode(obj, 0)
+				}
+			}
+		} else {
+			printJSONLDNode(block, 0)
+		}
+	}
+	fmt.Println()
+}
+
+func printJSONLDNode(obj map[string]interface{}, depth int) {
+	typ, _ := obj["@type"].(string)
+	if typ == "" {
+		// Reference-only node (just an @id)
+		if id, ok := obj["@id"].(string); ok && len(obj) <= 2 {
+			indent := strings.Repeat("  ", depth)
+			printRow(indent+"  ref", dim.Sprint(id))
+			return
+		}
+		typ = "(unknown)"
+	}
+
+	indent := strings.Repeat("  ", depth)
+	fmt.Println()
+	if depth == 0 {
+		sectionHeader(typ)
+	} else {
+		cyan.Print("│ ")
+		boldWhite.Println(indent + typ)
+	}
+
+	priority := []string{"name", "url", "description", "sameAs"}
+	skip := map[string]bool{"@type": true, "@id": true, "@context": true}
+
+	printFields := func(key string, val interface{}) {
+		label := indent + "  " + key
+		switch v := val.(type) {
+		case string:
+			printRow(label, v)
+		case float64:
+			if v == float64(int(v)) {
+				printRow(label, fmt.Sprintf("%d", int(v)))
+			} else {
+				printRow(label, fmt.Sprintf("%g", v))
+			}
+		case bool:
+			printRow(label, fmt.Sprintf("%t", v))
+		case map[string]interface{}:
+			printJSONLDNode(v, depth+1)
+		case []interface{}:
+			if len(v) == 0 {
+				printRow(label, dim.Sprint("(empty)"))
+				return
+			}
+			// Check if it's a simple string array
+			allStrings := true
+			for _, item := range v {
+				if _, ok := item.(string); !ok {
+					allStrings = false
+					break
+				}
+			}
+			if allStrings {
+				var items []string
+				for _, item := range v {
+					items = append(items, item.(string))
+				}
+				printRow(label, strings.Join(items, ", "))
+			} else {
+				printRow(label, fmt.Sprintf("[%d items]", len(v)))
+				for _, item := range v {
+					if obj, ok := item.(map[string]interface{}); ok {
+						printJSONLDNode(obj, depth+1)
+					}
+				}
+			}
+		default:
+			printRow(label, fmt.Sprintf("%v", val))
+		}
+	}
+
+	for _, key := range priority {
+		if val, ok := obj[key]; ok {
+			skip[key] = true
+			printFields(key, val)
+		}
+	}
+
+	for key, val := range obj {
+		if skip[key] {
+			continue
+		}
+		printFields(key, val)
+	}
+}
+
 func sectionHeader(title string) {
 	boldWhite.Printf("┌─ %s ", title)
 	boldWhite.Println(strings.Repeat("─", max(0, 62-len(title))))

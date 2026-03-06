@@ -38,7 +38,8 @@ func init() {
 	rootCmd.Flags().StringP("user-agent", "u", "krawl/1.0", "User-Agent header for the request")
 	rootCmd.Flags().Bool("no-audit", false, "Skip the SEO audit rules (only show metadata)")
 	rootCmd.Flags().Bool("no-meta", false, "Skip the metadata display (only show audit)")
-	rootCmd.Flags().Bool("json", false, "Output results as JSON")
+	rootCmd.Flags().BoolP("json", "j", false, "Output results as JSON")
+	rootCmd.Flags().BoolP("schema", "s", false, "Show only the detailed JSON-LD structured data")
 
 	viper.BindPFlag("timeout", rootCmd.Flags().Lookup("timeout"))
 	viper.BindPFlag("user-agent", rootCmd.Flags().Lookup("user-agent"))
@@ -82,6 +83,12 @@ func run(cmd *cobra.Command, args []string) error {
 	seoData, err := parser.Parse(result.Body)
 	if err != nil {
 		return fmt.Errorf("failed to parse HTML: %w", err)
+	}
+
+	schema, _ := cmd.Flags().GetBool("schema")
+	if schema {
+		display.PrintJSONLDDetail(seoData)
+		return nil
 	}
 
 	noAudit, _ := cmd.Flags().GetBool("no-audit")
