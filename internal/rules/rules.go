@@ -293,14 +293,31 @@ func checkStructuredData(data *parser.SEOData) []Result {
 
 	for i, block := range data.JSONLDBlocks {
 		ctx, _ := block["@context"].(string)
-		typ, _ := block["@type"].(string)
 		if ctx == "" {
 			results = append(results, Result{cat, fmt.Sprintf("JSON-LD #%d @context", i+1), SeverityWarning, "Missing @context"})
 		}
-		if typ == "" {
-			results = append(results, Result{cat, fmt.Sprintf("JSON-LD #%d @type", i+1), SeverityWarning, "Missing @type"})
-		} else {
+
+		typ, _ := block["@type"].(string)
+		graph, hasGraph := block["@graph"].([]interface{})
+
+		if typ != "" {
 			results = append(results, Result{cat, fmt.Sprintf("JSON-LD #%d @type", i+1), SeverityPass, typ})
+		} else if hasGraph {
+			var types []string
+			for _, item := range graph {
+				if obj, ok := item.(map[string]interface{}); ok {
+					if t, ok := obj["@type"].(string); ok {
+						types = append(types, t)
+					}
+				}
+			}
+			if len(types) > 0 {
+				results = append(results, Result{cat, fmt.Sprintf("JSON-LD #%d @graph", i+1), SeverityPass, fmt.Sprintf("%d item(s): %s", len(types), strings.Join(types, ", "))})
+			} else {
+				results = append(results, Result{cat, fmt.Sprintf("JSON-LD #%d @graph", i+1), SeverityWarning, "Graph contains no typed items"})
+			}
+		} else {
+			results = append(results, Result{cat, fmt.Sprintf("JSON-LD #%d @type", i+1), SeverityWarning, "Missing @type"})
 		}
 	}
 

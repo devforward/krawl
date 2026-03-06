@@ -101,10 +101,21 @@ func PrintSEOData(data *parser.SEOData) {
 		sectionHeader("Structured Data (JSON-LD)")
 		for i, block := range data.JSONLDBlocks {
 			typ, _ := block["@type"].(string)
-			if typ == "" {
-				typ = "(unknown type)"
+			if typ != "" {
+				printRow(fmt.Sprintf("Block #%d", i+1), typ)
+			} else if graph, ok := block["@graph"].([]interface{}); ok {
+				var types []string
+				for _, item := range graph {
+					if obj, ok := item.(map[string]interface{}); ok {
+						if t, ok := obj["@type"].(string); ok {
+							types = append(types, t)
+						}
+					}
+				}
+				printRow(fmt.Sprintf("Block #%d (@graph)", i+1), strings.Join(types, ", "))
+			} else {
+				printRow(fmt.Sprintf("Block #%d", i+1), "(unknown type)")
 			}
-			printRow(fmt.Sprintf("Block #%d", i+1), typ)
 		}
 	}
 
