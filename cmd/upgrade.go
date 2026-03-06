@@ -56,8 +56,14 @@ func runUpgrade(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("finding current binary: %w", err)
 	}
 
-	// Download to temp file, then replace
-	tmp := bin + ".tmp"
+	// Download to temp directory first to avoid permission issues
+	tmpFile, err := os.CreateTemp("", "krawl-upgrade-*")
+	if err != nil {
+		return fmt.Errorf("creating temp file: %w", err)
+	}
+	tmp := tmpFile.Name()
+	tmpFile.Close()
+
 	out, err := exec.Command("curl", "-fSL", "-o", tmp, url).CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("downloading: %s\n%s", err, out)
