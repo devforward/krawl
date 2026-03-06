@@ -79,22 +79,31 @@ func run(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to fetch %s: %w", url, err)
 	}
 
-	display.PrintHTTPInfo(result)
-
 	seoData, err := parser.Parse(result.Body)
 	if err != nil {
 		return fmt.Errorf("failed to parse HTML: %w", err)
 	}
 
-	noMeta, _ := cmd.Flags().GetBool("no-meta")
 	noAudit, _ := cmd.Flags().GetBool("no-audit")
+	jsonOutput, _ := cmd.Flags().GetBool("json")
 
+	var auditResults []rules.Result
+	if !noAudit {
+		auditResults = rules.Evaluate(seoData)
+	}
+
+	if jsonOutput {
+		return display.PrintJSON(result, seoData, auditResults)
+	}
+
+	display.PrintHTTPInfo(result)
+
+	noMeta, _ := cmd.Flags().GetBool("no-meta")
 	if !noMeta {
 		display.PrintSEOData(seoData)
 	}
 
 	if !noAudit {
-		auditResults := rules.Evaluate(seoData)
 		display.PrintRules(auditResults)
 	}
 
