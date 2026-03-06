@@ -8,18 +8,18 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/kmazanec/seocheck/internal/display"
-	"github.com/kmazanec/seocheck/internal/fetcher"
-	"github.com/kmazanec/seocheck/internal/parser"
-	"github.com/kmazanec/seocheck/internal/rules"
+	"github.com/devforward/krawl/internal/display"
+	"github.com/devforward/krawl/internal/fetcher"
+	"github.com/devforward/krawl/internal/parser"
+	"github.com/devforward/krawl/internal/rules"
 )
 
 var cfgFile string
 
 var rootCmd = &cobra.Command{
-	Use:   "seocheck [url]",
+	Use:   "krawl [url]",
 	Short: "Fetch a page and evaluate its SEO metadata",
-	Long:  `seocheck fetches a URL, displays HTTP response details, parses SEO-relevant meta tags, and evaluates them against standard SEO best practices.`,
+	Long:  `krawl fetches a URL, displays HTTP response details, parses SEO-relevant meta tags, and evaluates them against standard SEO best practices.`,
 	Args:  cobra.ExactArgs(1),
 	RunE:  run,
 }
@@ -33,9 +33,9 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.seocheck.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.krawl.yaml)")
 	rootCmd.Flags().DurationP("timeout", "t", 30*time.Second, "HTTP request timeout")
-	rootCmd.Flags().StringP("user-agent", "u", "seocheck/1.0", "User-Agent header for the request")
+	rootCmd.Flags().StringP("user-agent", "u", "krawl/1.0", "User-Agent header for the request")
 	rootCmd.Flags().Bool("no-audit", false, "Skip the SEO audit rules (only show metadata)")
 	rootCmd.Flags().Bool("no-meta", false, "Skip the metadata display (only show audit)")
 	rootCmd.Flags().Bool("json", false, "Output results as JSON")
@@ -53,11 +53,11 @@ func initConfig() {
 			viper.AddConfigPath(home)
 		}
 		viper.AddConfigPath(".")
-		viper.SetConfigName(".seocheck")
+		viper.SetConfigName(".krawl")
 		viper.SetConfigType("yaml")
 	}
 
-	viper.SetEnvPrefix("SEOCHECK")
+	viper.SetEnvPrefix("KRAWL")
 	viper.AutomaticEnv()
 	viper.ReadInConfig()
 }
@@ -71,7 +71,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 	userAgent := viper.GetString("user-agent")
 	if userAgent == "" {
-		userAgent = "seocheck/1.0"
+		userAgent = "krawl/1.0"
 	}
 
 	result, err := fetcher.Fetch(url, timeout, userAgent)

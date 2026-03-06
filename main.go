@@ -1,6 +1,6 @@
 package main
 
-import "github.com/kmazanec/seocheck/cmd"
+import "github.com/devforward/krawl/cmd"
 
 func main() {
 	cmd.Execute()

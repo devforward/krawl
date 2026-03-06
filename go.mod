@@ -1,4 +1,4 @@
-module github.com/kmazanec/seocheck
+module github.com/devforward/krawl
 
 go 1.25.0
 

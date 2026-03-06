@@ -5,9 +5,9 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
-	"github.com/kmazanec/seocheck/internal/fetcher"
-	"github.com/kmazanec/seocheck/internal/parser"
-	"github.com/kmazanec/seocheck/internal/rules"
+	"github.com/devforward/krawl/internal/fetcher"
+	"github.com/devforward/krawl/internal/parser"
+	"github.com/devforward/krawl/internal/rules"
 )
 
 var (
@@ -23,7 +23,7 @@ var (
 func PrintHTTPInfo(r *fetcher.Result) {
 	fmt.Println()
 	bold.Println("╔══════════════════════════════════════════════════════════════════╗")
-	bold.Printf("║  SEO Check: %-53s║\n", truncateDisplay(r.URL, 53))
+	bold.Printf("║  krawl: %-53s║\n", truncateDisplay(r.URL, 53))
 	bold.Println("╚══════════════════════════════════════════════════════════════════╝")
 
 	fmt.Println()

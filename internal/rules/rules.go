@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kmazanec/seocheck/internal/parser"
+	"github.com/devforward/krawl/internal/parser"
 )
 
 type Severity int
