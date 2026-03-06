@@ -200,9 +200,47 @@ func sectionHeader(title string) {
 	boldWhite.Println(strings.Repeat("─", max(0, 62-len(title))))
 }
 
+const maxLineWidth = 90
+
 func printRow(label, value string) {
-	cyan.Printf("│ %-24s", label)
-	fmt.Printf(" %s\n", value)
+	prefix := fmt.Sprintf("│ %-24s ", label)
+	cyan.Print(prefix[:26])
+	fmt.Print(prefix[26:])
+
+	contentWidth := maxLineWidth - len(prefix)
+	if len(value) <= contentWidth {
+		fmt.Println(value)
+		return
+	}
+
+	continuation := "│" + strings.Repeat(" ", 26)
+	remaining := value
+	first := true
+	for len(remaining) > 0 {
+		if !first {
+			cyan.Print("│")
+			fmt.Print(strings.Repeat(" ", 25))
+		}
+		first = false
+
+		width := contentWidth
+		if len(remaining) <= width {
+			fmt.Println(remaining)
+			return
+		}
+
+		// break at last space within width
+		cut := strings.LastIndex(remaining[:width], " ")
+		if cut <= 0 {
+			cut = width
+		}
+		fmt.Println(remaining[:cut])
+		remaining = remaining[cut:]
+		if len(remaining) > 0 && remaining[0] == ' ' {
+			remaining = remaining[1:]
+		}
+		_ = continuation
+	}
 }
 
 func formatStatusCode(code int) string {

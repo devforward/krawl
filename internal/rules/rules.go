@@ -63,7 +63,7 @@ func checkTitle(data *parser.SEOData) []Result {
 		return results
 	}
 
-	results = append(results, Result{cat, "Title exists", SeverityPass, fmt.Sprintf("Found: %q", truncate(data.Title, 60))})
+	results = append(results, Result{cat, "Title exists", SeverityPass, fmt.Sprintf("Found: %q", truncate(data.Title, 80))})
 
 	n := len(data.Title)
 	if n < 30 {
@@ -86,7 +86,7 @@ func checkDescription(data *parser.SEOData) []Result {
 		return results
 	}
 
-	results = append(results, Result{cat, "Meta description exists", SeverityPass, fmt.Sprintf("Found: %q", truncate(data.MetaDescription, 120))})
+	results = append(results, Result{cat, "Meta description exists", SeverityPass, fmt.Sprintf("Found: %q", truncate(data.MetaDescription, 180))})
 
 	n := len(data.MetaDescription)
 	if n < 70 {
@@ -151,7 +151,7 @@ func checkOpenGraph(data *parser.SEOData) []Result {
 	var results []Result
 	cat := "Open Graph"
 
-	check := func(name, value string, required bool) {
+	check := func(name, value string, required bool, maxLen int) {
 		if value == "" {
 			sev := SeverityWarning
 			if required {
@@ -159,15 +159,15 @@ func checkOpenGraph(data *parser.SEOData) []Result {
 			}
 			results = append(results, Result{cat, name + " exists", sev, "Missing " + name})
 		} else {
-			results = append(results, Result{cat, name + " exists", SeverityPass, truncate(value, 120)})
+			results = append(results, Result{cat, name + " exists", SeverityPass, truncate(value, maxLen)})
 		}
 	}
 
-	check("og:title", data.OGTitle, true)
-	check("og:type", data.OGType, true)
-	check("og:image", data.OGImage, true)
-	check("og:url", data.OGURL, true)
-	check("og:description", data.OGDescription, false)
+	check("og:title", data.OGTitle, true, 80)
+	check("og:type", data.OGType, true, 80)
+	check("og:image", data.OGImage, true, 120)
+	check("og:url", data.OGURL, true, 120)
+	check("og:description", data.OGDescription, false, 220)
 
 	if data.OGTitle != "" && len(data.OGTitle) > 60 {
 		results = append(results, Result{cat, "og:title length", SeverityWarning, fmt.Sprintf("Too long (%d chars). Aim for under 60.", len(data.OGTitle))})
