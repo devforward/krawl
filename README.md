@@ -4,16 +4,13 @@ A CLI tool that fetches web pages and evaluates their SEO metadata.
 
 ## Install
 
-### Download binary
-
-Grab the latest build from [GitHub Actions](https://github.com/devforward/krawl/actions) — pick the artifact for your platform, then:
-
 ```sh
-chmod +x krawl-*
-sudo mv krawl-* /usr/local/bin/krawl
+curl -fsSL https://raw.githubusercontent.com/devforward/krawl/main/install.sh | sh
 ```
 
-### Build from source
+### Other options
+
+Build from source:
 
 ```sh
 go install github.com/devforward/krawl@latest
