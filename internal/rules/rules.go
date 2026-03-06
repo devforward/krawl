@@ -86,7 +86,7 @@ func checkDescription(data *parser.SEOData) []Result {
 		return results
 	}
 
-	results = append(results, Result{cat, "Meta description exists", SeverityPass, fmt.Sprintf("Found: %q", truncate(data.MetaDescription, 80))})
+	results = append(results, Result{cat, "Meta description exists", SeverityPass, fmt.Sprintf("Found: %q", truncate(data.MetaDescription, 120))})
 
 	n := len(data.MetaDescription)
 	if n < 70 {
@@ -159,7 +159,7 @@ func checkOpenGraph(data *parser.SEOData) []Result {
 			}
 			results = append(results, Result{cat, name + " exists", sev, "Missing " + name})
 		} else {
-			results = append(results, Result{cat, name + " exists", SeverityPass, truncate(value, 80)})
+			results = append(results, Result{cat, name + " exists", SeverityPass, truncate(value, 120)})
 		}
 	}
 

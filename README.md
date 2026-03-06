@@ -48,8 +48,7 @@ krawl https://devforward.com
 
 ┌─ Page Metadata ─────────────────────────────────────────────────
 │ Title                    Dev Forward - Founder-Led Product Studio
-│ Description              Dev Forward is a founder-led AI product studio. We build
-│                          and operate our own software products...
+│ Description              Dev Forward is a founder-led AI product studio. We build and operate our own software products, and partner selectively with founders as a strategic CTO and build partner.
 │ Canonical                https://devforward.com
 │ Charset                  utf-8
 │ Viewport                 width=device-width, initial-scale=1
@@ -60,8 +59,7 @@ krawl https://devforward.com
 │ og:type                  website
 │ og:image                 https://devforward.com/og-image.png
 │ og:url                   (missing)
-│ og:description           Dev Forward is a founder-led product studio building
-│                          AI-enabled software and partnering with ambitious startups...
+│ og:description           Dev Forward is a founder-led product studio building AI-enabled software and partnering with ambitious startups to design, build, and scale technology businesses.
 
 ┌─ Twitter Card ──────────────────────────────────────────────────
 │ twitter:card             summary_large_image
@@ -80,7 +78,7 @@ krawl https://devforward.com
   ✓ Title length                   40 chars (30-60 recommended)
 
 ┌─ Description ───────────────────────────────────────────────────
-  ✓ Meta description exists        Found: "Dev Forward is a founder-led AI product..."
+  ✓ Meta description exists        Found: "Dev Forward is a founder-led AI product studio. We build and operate our own software products, and partner selectively ..."
   ⚠ Description length             Too long (171 chars). May be truncated. Aim for 70-160.
 
 ┌─ Canonical ─────────────────────────────────────────────────────
@@ -93,7 +91,7 @@ krawl https://devforward.com
   ✓ og:type exists                 website
   ✓ og:image exists                https://devforward.com/og-image.png
   ✗ og:url exists                  Missing og:url
-  ✓ og:description exists          Dev Forward is a founder-led product studio...
+  ✓ og:description exists          Dev Forward is a founder-led product studio building AI-enabled software and partnering with ambitious startups to desig...
   ⚠ og:image:alt exists            Missing og:image:alt (accessibility)
 
 ┌─ Twitter Card ──────────────────────────────────────────────────
