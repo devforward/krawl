@@ -19,81 +19,103 @@ go install github.com/devforward/krawl@latest
 ## Usage
 
 ```sh
-krawl https://example.com
+krawl https://devforward.com
 ```
 
 ### Example output
 
 ```
 ╔══════════════════════════════════════════════════════════════════╗
-║  krawl: https://example.com                                    ║
+║  krawl: https://devforward.com                                 ║
 ╚══════════════════════════════════════════════════════════════════╝
 
 ┌─ HTTP Response ─────────────────────────────────────────────────
 │ Status Code              200
-│ Final URL                https://example.com
-│ Content-Type             text/html
-│ Content-Length           528 B
+│ Final URL                https://devforward.com
+│ Content-Type             text/html; charset=utf-8
+│ Content-Length           41.8 KB
 
 ┌─ Timing ────────────────────────────────────────────────────────
-│ DNS Lookup               22.45ms
-│ TCP Connect              14.69ms
-│ TLS Handshake            24.02ms
-│ Time to First Byte       94.10ms
-│ Total Time               94.15ms
+│ DNS Lookup               69.18ms
+│ TCP Connect              15.88ms
+│ TLS Handshake            26.36ms
+│ Time to First Byte       170.85ms
+│ Total Time               170.88ms
+
+┌─ Notable Headers ───────────────────────────────────────────────
+│ Cache-Control            public,max-age=10,s-maxage=86400
+│ Server                   cloudflare
 
 ┌─ Page Metadata ─────────────────────────────────────────────────
-│ Title                    Example Domain
-│ Description              (missing)
-│ Canonical                (missing)
-│ Robots                   (not set - defaults to index, follow)
+│ Title                    Dev Forward - Founder-Led Product Studio
+│ Description              Dev Forward is a founder-led AI product studio. We build
+│                          and operate our own software products...
+│ Canonical                https://devforward.com
+│ Charset                  utf-8
 │ Viewport                 width=device-width, initial-scale=1
 │ Language                 en
 
 ┌─ Open Graph ────────────────────────────────────────────────────
-│ og:title                 (missing)
-│ og:type                  (missing)
-│ og:image                 (missing)
+│ og:title                 Dev Forward - Founder-Led Product Studio
+│ og:type                  website
+│ og:image                 https://devforward.com/og-image.png
 │ og:url                   (missing)
-│ og:description           (missing)
+│ og:description           Dev Forward is a founder-led product studio building
+│                          AI-enabled software and partnering with ambitious startups...
 
 ┌─ Twitter Card ──────────────────────────────────────────────────
-│ twitter:card             (missing)
-│ twitter:title            (falls back to og:title)
-│ twitter:description      (falls back to og:description)
-│ twitter:image            (falls back to og:image)
+│ twitter:card             summary_large_image
+│ twitter:title            Dev Forward - Founder-Led Product Studio
+│ twitter:image            https://devforward.com/og-image.png
+
+┌─ Structured Data (JSON-LD) ─────────────────────────────────────
+│ Block #1                 (unknown type)
 
 ╔══════════════════════════════════════════════════════════════════╗
 ║  SEO Audit Results                                             ║
 ╚══════════════════════════════════════════════════════════════════╝
 
 ┌─ Title ─────────────────────────────────────────────────────────
-  ✓ Title exists                   Found: "Example Domain"
-  ⚠ Title length                   Too short (14 chars). Aim for 30-60.
+  ✓ Title exists                   Found: "Dev Forward - Founder-Led Product Studio"
+  ✓ Title length                   40 chars (30-60 recommended)
 
 ┌─ Description ───────────────────────────────────────────────────
-  ⚠ Meta description exists        Missing meta description
+  ✓ Meta description exists        Found: "Dev Forward is a founder-led AI product..."
+  ⚠ Description length             Too long (171 chars). May be truncated. Aim for 70-160.
 
 ┌─ Canonical ─────────────────────────────────────────────────────
-  ✗ Canonical URL exists           Missing <link rel="canonical"> tag
+  ✓ Canonical URL exists           https://devforward.com
+  ✓ Canonical is absolute URL      Uses absolute URL
+  ✓ Canonical uses HTTPS           Uses HTTPS
 
 ┌─ Open Graph ────────────────────────────────────────────────────
-  ✗ og:title exists                Missing og:title
-  ✗ og:type exists                 Missing og:type
-  ✗ og:image exists                Missing og:image
+  ✓ og:title exists                Dev Forward - Founder-Led Product Studio
+  ✓ og:type exists                 website
+  ✓ og:image exists                https://devforward.com/og-image.png
   ✗ og:url exists                  Missing og:url
-  ⚠ og:description exists          Missing og:description
+  ✓ og:description exists          Dev Forward is a founder-led product studio...
+  ⚠ og:image:alt exists            Missing og:image:alt (accessibility)
+
+┌─ Twitter Card ──────────────────────────────────────────────────
+  ✓ twitter:card exists            summary_large_image
+  ✓ twitter:title exists           Dev Forward - Founder-Led Product Studio
+  ⚠ twitter:image:alt exists       Missing twitter:image:alt (accessibility)
 
 ┌─ Technical ─────────────────────────────────────────────────────
-  ⚠ Charset declared               Missing charset declaration
+  ✓ Charset declared               utf-8
   ✓ Viewport meta tag              width=device-width, initial-scale=1
   ✓ HTML lang attribute            en
+  ✓ Favicon                        Favicon declared
 
 ┌─ Headings ──────────────────────────────────────────────────────
-  ✓ H1 tag exists                  Example Domain
+  ✓ H1 tag exists                  Dev Forward
+
+┌─ Structured Data ───────────────────────────────────────────────
+  ✓ JSON-LD exists                 Found 1 block(s)
+  ⚠ JSON-LD #1 @type               Missing @type
 
 ────────────────────────────────────────────────────────────────────
-  Summary: 4 passed  6 warnings  5 errors  3 info
+  Summary: 18 passed  4 warnings  1 errors  1 info
 ────────────────────────────────────────────────────────────────────
 ```
 
@@ -102,16 +124,16 @@ krawl https://example.com
 Pipe to `jq` or feed directly into scripts and AI tools:
 
 ```sh
-krawl --json https://example.com
-krawl --json https://example.com | jq '.audit.summary'
+krawl --json https://devforward.com
+krawl --json https://devforward.com | jq '.audit.summary'
 ```
 
 ```json
 {
-  "pass": 4,
-  "warn": 6,
-  "fail": 5,
-  "info": 3
+  "pass": 18,
+  "warn": 4,
+  "fail": 1,
+  "info": 1
 }
 ```
 
