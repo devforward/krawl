@@ -2,7 +2,7 @@
 
 A fast, single-binary CLI tool for SEO analysis. Fetch any URL and instantly see its meta tags, Open Graph data, Twitter Card tags, structured data, and more — with a built-in audit that flags common SEO issues.
 
-Use it to check title tag length, missing meta descriptions, broken canonical URLs, missing og:image tags, and 18+ other SEO rules. Outputs both human-readable tables and machine-readable JSON for use in scripts, CI pipelines, and AI workflows.
+Use it to check title tag length, missing meta descriptions, broken canonical URLs, missing og:image tags, broken links, and 18+ other SEO rules. Outputs both human-readable tables and machine-readable JSON for use in scripts, CI pipelines, and AI workflows.
 
 ## Install
 
@@ -16,7 +16,21 @@ Or build from source:
 go install github.com/devforward/krawl@latest
 ```
 
-## Usage
+Upgrade to the latest version:
+
+```sh
+krawl upgrade
+```
+
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `krawl <url>` | SEO audit — meta tags, Open Graph, Twitter Cards, structured data |
+| `krawl links <url>` | Check all internal and external links for broken URLs |
+| `krawl upgrade` | Self-update to the latest release |
+
+## SEO Audit
 
 ```sh
 krawl https://devforward.com
@@ -42,17 +56,12 @@ krawl https://devforward.com
 │ Time to First Byte       170.85ms
 │ Total Time               170.88ms
 
-┌─ Notable Headers ───────────────────────────────────────────────
-│ Cache-Control            public,max-age=10,s-maxage=86400
-│ Server                   cloudflare
-
 ┌─ Page Metadata ─────────────────────────────────────────────────
 │ Title                    Dev Forward - Founder-Led Product Studio
 │ Description              Dev Forward is a founder-led AI product studio. We build and
 │                          operate our own software products, and partner selectively
 │                          with founders as a strategic CTO and build partner.
 │ Canonical                https://devforward.com
-│ Charset                  utf-8
 │ Viewport                 width=device-width, initial-scale=1
 │ Language                 en
 
@@ -71,7 +80,7 @@ krawl https://devforward.com
 │ twitter:image            https://devforward.com/og-image.png
 
 ┌─ Structured Data (JSON-LD) ─────────────────────────────────────
-│ Block #1                 (unknown type)
+│ Block #1 (@graph)        Organization, WebSite, WebPage, ProfessionalService
 
 ╔══════════════════════════════════════════════════════════════════╗
 ║  SEO Audit Results                                             ║
@@ -82,10 +91,10 @@ krawl https://devforward.com
   ✓ Title length                   40 chars (30-60 recommended)
 
 ┌─ Description ───────────────────────────────────────────────────
-  ✓ Meta description exists        Found: "Dev Forward is a founder-led AI product studio. We build
-                                   and operate our own software products, and partner
-                                   selectively with founders as a strategic CTO and build
-                                   partner."
+  ✓ Meta description exists        Found: "Dev Forward is a founder-led AI product
+                                   studio. We build and operate our own software
+                                   products, and partner selectively with founders as
+                                   a strategic CTO and build partner."
   ⚠ Description length             Too long (171 chars). May be truncated. Aim for 70-160.
 
 ┌─ Canonical ─────────────────────────────────────────────────────
@@ -120,43 +129,86 @@ krawl https://devforward.com
 
 ┌─ Structured Data ───────────────────────────────────────────────
   ✓ JSON-LD exists                 Found 1 block(s)
-  ⚠ JSON-LD #1 @type               Missing @type
+  ✓ JSON-LD #1 @graph              4 item(s): Organization, WebSite, WebPage, ProfessionalService
 
 ────────────────────────────────────────────────────────────────────
-  Summary: 18 passed  4 warnings  1 errors  1 info
+  Summary: 19 passed  3 warnings  1 errors  1 info
 ────────────────────────────────────────────────────────────────────
 ```
 
-### JSON output
-
-Pipe to `jq` or feed directly into scripts and AI tools:
+## Link Checker
 
 ```sh
-krawl --json https://devforward.com
-krawl --json https://devforward.com | jq '.audit.summary'
+krawl links https://devforward.com
 ```
 
-```json
-{
-  "pass": 18,
-  "warn": 4,
-  "fail": 1,
-  "info": 1
-}
+### Example output
+
+```
+╔══════════════════════════════════════════════════════════════════╗
+║  Link Check: https://devforward.com                            ║
+╚══════════════════════════════════════════════════════════════════╝
+
+  Found 9 links (4 internal, 5 external). Checking...
+
+┌─ Internal Links (4) ──────────────────────────────────────────
+  ✓ 200   https://devforward.com/                                      Dev Forward
+  ✓ 200   https://devforward.com/work-with-us                          Work With Us
+  ✓ 200   https://devforward.com                                       Explore the Studio
+  ✓ 200   https://devforward.com/cdn-cgi/l/email-protection            [email protected]
+
+┌─ External Links (5) ──────────────────────────────────────────
+  ✓ 200   https://costops.dev                                          ■ Visit CostOps
+  ✓ 200   https://electrac.app                                         ■ Visit Electrac
+  ✓ 200   https://slopdrop.net                                         ■ Visit SlopDrop
+  ✓ 200   https://rentbutter.com                                       ■ Visit RentButter
+  ✓ 200   https://joincamino.com                                       ■ Visit Camino
+
+────────────────────────────────────────────────────────────────────
+  Summary: 9 ok  0 redirected  0 broken  (9 total)
+────────────────────────────────────────────────────────────────────
 ```
 
-### Flags
+## JSON Output
+
+All commands support `-j` / `--json` for machine-readable output:
+
+```sh
+krawl -j https://devforward.com
+krawl -j https://devforward.com | jq '.audit.summary'
+krawl links -j https://devforward.com | jq '.summary'
+```
+
+## Schema Detail
+
+Use `-s` / `--schema` to see a full breakdown of JSON-LD structured data with nested entities:
+
+```sh
+krawl -s https://devforward.com
+```
+
+## Flags
+
+### `krawl <url>`
 
 | Flag | Description |
 |------|-------------|
-| `--json` | Output as JSON |
+| `-j, --json` | Output as JSON |
+| `-s, --schema` | Show only detailed JSON-LD structured data |
 | `--no-audit` | Skip SEO audit, show metadata only |
 | `--no-meta` | Skip metadata, show audit only |
 | `-t, --timeout` | HTTP timeout (default 30s) |
 | `-u, --user-agent` | Custom User-Agent string |
 | `--config` | Path to config file |
 
-### Config
+### `krawl links <url>`
+
+| Flag | Description |
+|------|-------------|
+| `-j, --json` | Output as JSON |
+| `-c, --concurrency` | Number of concurrent link checks (default 10) |
+
+## Config
 
 krawl looks for `.krawl.yaml` in your home directory or current directory. Settings can also be passed via `KRAWL_*` environment variables.
 
@@ -170,11 +222,13 @@ krawl looks for `.krawl.yaml` in your home directory or current directory. Setti
 
 **Twitter Cards** — twitter:card (valid type), twitter:title, twitter:description, twitter:image (HTTPS), twitter:image:alt
 
-**Structured Data** — JSON-LD detection, @context and @type validation
+**Structured Data** — JSON-LD detection, @context and @type validation, @graph traversal
 
 **Headings** — H1 existence and count (flags multiple H1s)
 
 **Technical** — favicon, viewport zoom restrictions (accessibility), charset encoding
+
+**Links** — internal and external link checking with concurrent HEAD requests, redirect detection
 
 ## License
 
