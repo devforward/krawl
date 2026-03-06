@@ -28,6 +28,7 @@ krawl upgrade
 |---------|-------------|
 | `krawl <url>` | SEO audit — meta tags, Open Graph, Twitter Cards, structured data |
 | `krawl links <url>` | Check all internal and external links for broken URLs |
+| `krawl sitemap <url>` | Fetch and validate an XML sitemap |
 | `krawl upgrade` | Self-update to the latest release |
 
 ## SEO Audit
@@ -169,6 +170,53 @@ krawl links https://devforward.com
 ────────────────────────────────────────────────────────────────────
 ```
 
+## Sitemap Validator
+
+```sh
+krawl sitemap https://www.apple.com/sitemap.xml
+```
+
+### Example output
+
+```
+╔══════════════════════════════════════════════════════════════════╗
+║  Sitemap: https://www.apple.com/sitemap.xml                    ║
+╚══════════════════════════════════════════════════════════════════╝
+
+┌─ Summary ───────────────────────────────────────────────────────
+│ Type                     URL Set
+│ Total URLs               838
+│ File Size                70.1 KB
+│ Has lastmod              0/838 URLs
+
+┌─ URLs (838) ────────────────────────────────────────────────────
+│   https://www.apple.com/
+│   https://www.apple.com/accessibility/
+│   https://www.apple.com/airpods-4/
+│   https://www.apple.com/apple-intelligence/
+│   https://www.apple.com/iphone/
+│   ... and 833 more URLs
+
+╔══════════════════════════════════════════════════════════════════╗
+║  Validation Results                                            ║
+╚══════════════════════════════════════════════════════════════════╝
+
+  ⚠ No URLs have lastmod set (recommended for crawl prioritization)
+  ℹ robots.txt declares a sitemap but not this specific URL
+
+────────────────────────────────────────────────────────────────────
+  Summary: 0 errors  1 warnings  1 info
+────────────────────────────────────────────────────────────────────
+```
+
+Validates against the sitemaps.org protocol:
+- URL limits (50,000 per file) and file size (50MB)
+- Absolute URLs, domain/protocol matching, duplicates
+- `lastmod` format (W3C datetime), future dates
+- `changefreq` and `priority` values
+- Sitemap index support (nested sitemaps)
+- robots.txt sitemap declaration
+
 ## JSON Output
 
 All commands support `-j` / `--json` for machine-readable output:
@@ -177,6 +225,7 @@ All commands support `-j` / `--json` for machine-readable output:
 krawl -j https://devforward.com
 krawl -j https://devforward.com | jq '.audit.summary'
 krawl links -j https://devforward.com | jq '.summary'
+krawl sitemap -j https://example.com/sitemap.xml
 ```
 
 ## Schema Detail
@@ -208,6 +257,12 @@ krawl -s https://devforward.com
 | `-j, --json` | Output as JSON |
 | `-c, --concurrency` | Number of concurrent link checks (default 10) |
 
+### `krawl sitemap <url>`
+
+| Flag | Description |
+|------|-------------|
+| `-j, --json` | Output as JSON |
+
 ## Config
 
 krawl looks for `.krawl.yaml` in your home directory or current directory. Settings can also be passed via `KRAWL_*` environment variables.
@@ -229,6 +284,8 @@ krawl looks for `.krawl.yaml` in your home directory or current directory. Setti
 **Technical** — favicon, viewport zoom restrictions (accessibility), charset encoding
 
 **Links** — internal and external link checking with concurrent HEAD requests, redirect detection
+
+**Sitemaps** — XML sitemap validation, sitemap index support, URL/lastmod/changefreq/priority checks, robots.txt declaration
 
 ## License
 
