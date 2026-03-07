@@ -56,6 +56,29 @@ type JSONSEOData struct {
 	JSONLD         []map[string]interface{} `json:"json_ld,omitempty"`
 	HasFavicon     bool                     `json:"has_favicon"`
 	H1             []string                 `json:"h1,omitempty"`
+	Images         *JSONImageStats          `json:"images,omitempty"`
+	Content        *JSONContentStats        `json:"content,omitempty"`
+	Links          *JSONLinkStats           `json:"links,omitempty"`
+}
+
+type JSONImageStats struct {
+	Total             int `json:"total"`
+	MissingAlt        int `json:"missing_alt"`
+	MissingDimensions int `json:"missing_dimensions"`
+}
+
+type JSONContentStats struct {
+	WordCount     int     `json:"word_count"`
+	ContentBytes  int     `json:"content_bytes"`
+	HTMLBytes     int     `json:"html_bytes"`
+	TextToHTML    float64 `json:"text_to_html_ratio"`
+}
+
+type JSONLinkStats struct {
+	Total    int `json:"total"`
+	Internal int `json:"internal"`
+	External int `json:"external"`
+	Nofollow int `json:"nofollow"`
 }
 
 type JSONOpenGraph struct {
@@ -197,6 +220,42 @@ func buildSEOData(d *parser.SEOData) JSONSEOData {
 
 	for _, h := range d.Hreflang {
 		seo.Hreflang = append(seo.Hreflang, JSONHreflang{Lang: h.Lang, Href: h.Href})
+	}
+
+	if len(d.Images) > 0 {
+		missingAlt := 0
+		missingDim := 0
+		for _, img := range d.Images {
+			if !img.HasAlt {
+				missingAlt++
+			}
+			if img.Width == "" && img.Height == "" {
+				missingDim++
+			}
+		}
+		seo.Images = &JSONImageStats{
+			Total:             len(d.Images),
+			MissingAlt:        missingAlt,
+			MissingDimensions: missingDim,
+		}
+	}
+
+	if d.WordCount > 0 || d.RawHTMLLength > 0 {
+		seo.Content = &JSONContentStats{
+			WordCount:    d.WordCount,
+			ContentBytes: d.ContentLength,
+			HTMLBytes:    d.RawHTMLLength,
+			TextToHTML:   d.ContentRatio,
+		}
+	}
+
+	if d.TotalLinks > 0 {
+		seo.Links = &JSONLinkStats{
+			Total:    d.TotalLinks,
+			Internal: d.InternalLinks,
+			External: d.ExternalLinks,
+			Nofollow: d.NofollowLinks,
+		}
 	}
 
 	return seo

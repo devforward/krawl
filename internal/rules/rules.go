@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/devforward/krawl/internal/fetcher"
 	"github.com/devforward/krawl/internal/parser"
 )
 
@@ -38,7 +39,7 @@ type Result struct {
 	Message  string
 }
 
-func Evaluate(data *parser.SEOData) []Result {
+func Evaluate(data *parser.SEOData, fetchResult *fetcher.Result) []Result {
 	var results []Result
 
 	results = append(results, checkTitle(data)...)
@@ -50,6 +51,10 @@ func Evaluate(data *parser.SEOData) []Result {
 	results = append(results, checkTechnical(data)...)
 	results = append(results, checkHeadings(data)...)
 	results = append(results, checkStructuredData(data)...)
+	results = append(results, checkImages(data)...)
+	results = append(results, checkContent(data)...)
+	results = append(results, checkRedirects(fetchResult)...)
+	results = append(results, checkLinkMetrics(data)...)
 
 	return results
 }
@@ -277,6 +282,23 @@ func checkHeadings(data *parser.SEOData) []Result {
 		results = append(results, Result{cat, "H1 tag count", SeverityWarning, fmt.Sprintf("Multiple H1 tags found (%d). Use exactly one.", len(data.H1))})
 	}
 
+	// Check heading hierarchy for skipped levels
+	if len(data.Headings) > 0 {
+		skipped := false
+		prevLevel := 0
+		for _, h := range data.Headings {
+			if prevLevel > 0 && h.Level > prevLevel+1 {
+				results = append(results, Result{cat, "Heading hierarchy", SeverityWarning,
+					fmt.Sprintf("Skipped heading level: H%d → H%d (found %q)", prevLevel, h.Level, truncate(h.Text, 40))})
+				skipped = true
+			}
+			prevLevel = h.Level
+		}
+		if !skipped {
+			results = append(results, Result{cat, "Heading hierarchy", SeverityPass, "No skipped heading levels"})
+		}
+	}
+
 	return results
 }
 
@@ -319,6 +341,133 @@ func checkStructuredData(data *parser.SEOData) []Result {
 		} else {
 			results = append(results, Result{cat, fmt.Sprintf("JSON-LD #%d @type", i+1), SeverityWarning, "Missing @type"})
 		}
+	}
+
+	return results
+}
+
+func checkImages(data *parser.SEOData) []Result {
+	var results []Result
+	cat := "Images"
+
+	if len(data.Images) == 0 {
+		results = append(results, Result{cat, "Images found", SeverityInfo, "No <img> tags found on page"})
+		return results
+	}
+
+	results = append(results, Result{cat, "Images found", SeverityPass, fmt.Sprintf("%d image(s)", len(data.Images))})
+
+	missingAlt := 0
+	emptyAlt := 0
+	missingDimensions := 0
+	for _, img := range data.Images {
+		if !img.HasAlt {
+			missingAlt++
+		} else if img.Alt == "" {
+			emptyAlt++
+		}
+		if img.Width == "" && img.Height == "" {
+			missingDimensions++
+		}
+	}
+
+	if missingAlt > 0 {
+		results = append(results, Result{cat, "Alt text", SeverityError,
+			fmt.Sprintf("%d image(s) missing alt attribute (accessibility & SEO)", missingAlt)})
+	} else if emptyAlt > 0 {
+		results = append(results, Result{cat, "Alt text", SeverityPass,
+			fmt.Sprintf("All images have alt attributes (%d decorative with empty alt)", emptyAlt)})
+	} else {
+		results = append(results, Result{cat, "Alt text", SeverityPass, "All images have alt text"})
+	}
+
+	if missingDimensions > 0 {
+		results = append(results, Result{cat, "Image dimensions", SeverityWarning,
+			fmt.Sprintf("%d image(s) missing width/height (causes layout shift)", missingDimensions)})
+	} else {
+		results = append(results, Result{cat, "Image dimensions", SeverityPass, "All images have width and height"})
+	}
+
+	return results
+}
+
+func checkContent(data *parser.SEOData) []Result {
+	var results []Result
+	cat := "Content"
+
+	results = append(results, Result{cat, "Word count", SeverityInfo, fmt.Sprintf("%d words", data.WordCount)})
+
+	if data.WordCount < 50 {
+		results = append(results, Result{cat, "Thin content", SeverityWarning, "Very low word count. Pages with thin content may rank poorly."})
+	}
+
+	if data.ContentRatio > 0 {
+		pct := data.ContentRatio * 100
+		if pct < 10 {
+			results = append(results, Result{cat, "Text-to-HTML ratio", SeverityWarning,
+				fmt.Sprintf("%.1f%% (low). Heavy markup relative to visible content.", pct)})
+		} else {
+			results = append(results, Result{cat, "Text-to-HTML ratio", SeverityPass,
+				fmt.Sprintf("%.1f%%", pct)})
+		}
+	}
+
+	return results
+}
+
+func checkRedirects(r *fetcher.Result) []Result {
+	var results []Result
+	cat := "Redirects"
+
+	if len(r.Redirects) == 0 {
+		return results
+	}
+
+	if len(r.Redirects) <= 2 {
+		results = append(results, Result{cat, "Redirect chain", SeverityPass,
+			fmt.Sprintf("%d redirect(s)", len(r.Redirects))})
+	} else {
+		results = append(results, Result{cat, "Redirect chain", SeverityWarning,
+			fmt.Sprintf("%d redirects in chain (aim for ≤2). Longer chains waste crawl budget.", len(r.Redirects))})
+	}
+
+	// Check for mixed HTTP/HTTPS in the chain
+	for _, rd := range r.Redirects {
+		if strings.HasPrefix(rd.URL, "http://") && strings.HasPrefix(r.FinalURL, "https://") {
+			results = append(results, Result{cat, "Mixed protocol redirect", SeverityWarning,
+				"Redirect chain includes HTTP → HTTPS hop. Set up direct HTTPS redirect."})
+			break
+		}
+	}
+
+	return results
+}
+
+func checkLinkMetrics(data *parser.SEOData) []Result {
+	var results []Result
+	cat := "Links"
+
+	if data.TotalLinks == 0 {
+		results = append(results, Result{cat, "Links found", SeverityWarning, "No links found on page"})
+		return results
+	}
+
+	results = append(results, Result{cat, "Links found", SeverityPass,
+		fmt.Sprintf("%d total (%d internal, %d external)", data.TotalLinks, data.InternalLinks, data.ExternalLinks)})
+
+	if data.TotalLinks > 200 {
+		results = append(results, Result{cat, "Link count", SeverityWarning,
+			fmt.Sprintf("%d links on page. Excessive links may dilute PageRank and hurt crawlability.", data.TotalLinks)})
+	}
+
+	if data.NofollowLinks > 0 {
+		results = append(results, Result{cat, "Nofollow links", SeverityInfo,
+			fmt.Sprintf("%d link(s) marked nofollow", data.NofollowLinks)})
+	}
+
+	if data.InternalLinks == 0 && data.TotalLinks > 0 {
+		results = append(results, Result{cat, "Internal links", SeverityWarning,
+			"No internal links found. Internal linking helps search engines discover and rank pages."})
 	}
 
 	return results

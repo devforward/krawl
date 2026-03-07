@@ -2,7 +2,7 @@
 
 A fast, single-binary CLI tool for SEO analysis. Fetch any URL and instantly see its meta tags, Open Graph data, Twitter Card tags, structured data, and more — with a built-in audit that flags common SEO issues.
 
-Use it to check title tag length, missing meta descriptions, broken canonical URLs, missing og:image tags, broken links, and 18+ other SEO rules. Outputs both human-readable tables and machine-readable JSON for use in scripts, CI pipelines, and AI workflows.
+Use it to check title tag length, missing meta descriptions, broken canonical URLs, missing og:image tags, image alt text, heading hierarchy, content quality, redirect chains, link metrics, and 30+ other SEO rules. Outputs both human-readable tables and machine-readable JSON for use in scripts, CI pipelines, and AI workflows.
 
 ## Install
 
@@ -127,13 +127,26 @@ krawl https://devforward.com
 
 ┌─ Headings ──────────────────────────────────────────────────────
   ✓ H1 tag exists                  Dev Forward
+  ⚠ Heading hierarchy              Skipped heading level: H2 → H4 (found "Navigate")
 
 ┌─ Structured Data ───────────────────────────────────────────────
   ✓ JSON-LD exists                 Found 1 block(s)
   ✓ JSON-LD #1 @graph              4 item(s): Organization, WebSite, WebPage, ProfessionalService
 
+┌─ Images ────────────────────────────────────────────────────────
+  ✓ Images found                   2 image(s)
+  ✓ Alt text                       All images have alt text
+  ⚠ Image dimensions               2 image(s) missing width/height (causes layout shift)
+
+┌─ Content ───────────────────────────────────────────────────────
+  ℹ Word count                     612 words
+  ⚠ Text-to-HTML ratio             9.7% (low). Heavy markup relative to visible content.
+
+┌─ Links ─────────────────────────────────────────────────────────
+  ✓ Links found                    21 total (16 internal, 5 external)
+
 ────────────────────────────────────────────────────────────────────
-  Summary: 19 passed  3 warnings  1 errors  1 info
+  Summary: 22 passed  6 warnings  1 errors  2 info
 ────────────────────────────────────────────────────────────────────
 ```
 
@@ -279,11 +292,17 @@ krawl looks for `.krawl.yaml` in your home directory or current directory. Setti
 
 **Structured Data** — JSON-LD detection, @context and @type validation, @graph traversal
 
-**Headings** — H1 existence and count (flags multiple H1s)
+**Headings** — H1 existence and count (flags multiple H1s), heading hierarchy validation (flags skipped levels like H2 → H4)
 
 **Technical** — favicon, viewport zoom restrictions (accessibility), charset encoding
 
-**Links** — internal and external link checking with concurrent HEAD requests, redirect detection
+**Images** — alt text audit (missing vs decorative empty alt), width/height dimensions (layout shift prevention)
+
+**Content** — word count, thin content detection, text-to-HTML ratio
+
+**Redirects** — redirect chain length (flags >2 hops), mixed HTTP/HTTPS redirect detection
+
+**Links** — internal/external link breakdown, nofollow audit, excessive link count warning, internal and external link checking with concurrent HEAD requests
 
 **Sitemaps** — XML sitemap validation, sitemap index support, URL/lastmod/changefreq/priority checks, robots.txt declaration
 

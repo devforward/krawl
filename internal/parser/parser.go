@@ -3,7 +3,9 @@ package parser
 import (
 	"bytes"
 	"encoding/json"
+	"net/url"
 	"strings"
+	"unicode"
 
 	"golang.org/x/net/html"
 )
@@ -45,9 +47,44 @@ type SEOData struct {
 	H1            []string
 	H2            []string
 
+	// Heading hierarchy (ordered as they appear in document)
+	Headings []Heading
+
+	// Images
+	Images []ImageTag
+
+	// Content metrics
+	WordCount        int
+	ContentLength    int // visible text bytes
+	RawHTMLLength    int // total HTML bytes
+	ContentRatio     float64 // ContentLength / RawHTMLLength
+
+	// Link metrics (from body)
+	InternalLinks    int
+	ExternalLinks    int
+	NofollowLinks    int
+	TotalLinks       int
+
 	// Raw collections
 	MetaTags      []MetaTag
 	LinkTags      []LinkTag
+
+	// unexported
+	pageURL string
+}
+
+type Heading struct {
+	Level int    // 1-6
+	Text  string
+}
+
+type ImageTag struct {
+	Src     string
+	Alt     string
+	HasAlt  bool // distinguishes alt="" from no alt attribute
+	Width   string
+	Height  string
+	Loading string
 }
 
 type HreflangEntry struct {
@@ -71,13 +108,25 @@ type LinkTag struct {
 }
 
 func Parse(body []byte) (*SEOData, error) {
+	return ParseWithURL(body, "")
+}
+
+func ParseWithURL(body []byte, pageURL string) (*SEOData, error) {
 	doc, err := html.Parse(bytes.NewReader(body))
 	if err != nil {
 		return nil, err
 	}
 
-	data := &SEOData{}
+	data := &SEOData{
+		RawHTMLLength: len(body),
+	}
+	data.pageURL = pageURL
 	parseNode(doc, data)
+
+	if data.RawHTMLLength > 0 {
+		data.ContentRatio = float64(data.ContentLength) / float64(data.RawHTMLLength)
+	}
+
 	return data, nil
 }
 
@@ -106,8 +155,7 @@ func parseNode(n *html.Node, data *SEOData) {
 		case "h2":
 			data.H2 = append(data.H2, getTextContent(n))
 		case "body":
-			// Only parse h1/h2 from body, skip deep traversal for perf
-			parseHeadings(n, data)
+			parseBody(n, data)
 			return
 		}
 	}
@@ -117,18 +165,128 @@ func parseNode(n *html.Node, data *SEOData) {
 	}
 }
 
-func parseHeadings(n *html.Node, data *SEOData) {
-	if n.Type == html.ElementNode {
-		switch n.Data {
-		case "h1":
-			data.H1 = append(data.H1, getTextContent(n))
-		case "h2":
-			data.H2 = append(data.H2, getTextContent(n))
+var headingLevels = map[string]int{
+	"h1": 1, "h2": 2, "h3": 3, "h4": 4, "h5": 5, "h6": 6,
+}
+
+func parseBody(n *html.Node, data *SEOData) {
+	if n.Type == html.TextNode {
+		// Skip text inside script/style tags (handled by caller skipping those subtrees)
+		text := strings.TrimSpace(n.Data)
+		if text != "" {
+			data.ContentLength += len(n.Data)
+			data.WordCount += countWords(text)
 		}
 	}
-	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		parseHeadings(c, data)
+
+	if n.Type == html.ElementNode {
+		// Skip script and style content
+		if n.Data == "script" || n.Data == "style" || n.Data == "noscript" {
+			return
+		}
+
+		if level, ok := headingLevels[n.Data]; ok {
+			text := getTextContent(n)
+			data.Headings = append(data.Headings, Heading{Level: level, Text: text})
+			switch n.Data {
+			case "h1":
+				data.H1 = append(data.H1, text)
+			case "h2":
+				data.H2 = append(data.H2, text)
+			}
+		}
+
+		if n.Data == "img" {
+			parseImage(n, data)
+		}
+
+		if n.Data == "a" {
+			parseBodyLink(n, data)
+		}
 	}
+
+	for c := n.FirstChild; c != nil; c = c.NextSibling {
+		parseBody(c, data)
+	}
+}
+
+func parseImage(n *html.Node, data *SEOData) {
+	img := ImageTag{}
+	for _, a := range n.Attr {
+		switch a.Key {
+		case "src":
+			img.Src = a.Val
+		case "alt":
+			img.Alt = a.Val
+			img.HasAlt = true
+		case "width":
+			img.Width = a.Val
+		case "height":
+			img.Height = a.Val
+		case "loading":
+			img.Loading = a.Val
+		}
+	}
+	data.Images = append(data.Images, img)
+}
+
+func parseBodyLink(n *html.Node, data *SEOData) {
+	var href, rel string
+	for _, a := range n.Attr {
+		switch a.Key {
+		case "href":
+			href = a.Val
+		case "rel":
+			rel = strings.ToLower(a.Val)
+		}
+	}
+
+	if href == "" || strings.HasPrefix(href, "mailto:") || strings.HasPrefix(href, "tel:") || strings.HasPrefix(href, "javascript:") || href == "#" {
+		return
+	}
+
+	data.TotalLinks++
+	if strings.Contains(rel, "nofollow") {
+		data.NofollowLinks++
+	}
+
+	if data.pageURL != "" {
+		if isInternalLink(href, data.pageURL) {
+			data.InternalLinks++
+		} else {
+			data.ExternalLinks++
+		}
+	}
+}
+
+func isInternalLink(href, pageURL string) bool {
+	parsed, err := url.Parse(href)
+	if err != nil {
+		return false
+	}
+	// Relative URLs are internal
+	if parsed.Host == "" {
+		return true
+	}
+	base, err := url.Parse(pageURL)
+	if err != nil {
+		return false
+	}
+	return strings.EqualFold(parsed.Host, base.Host)
+}
+
+func countWords(s string) int {
+	count := 0
+	inWord := false
+	for _, r := range s {
+		if unicode.IsSpace(r) {
+			inWord = false
+		} else if !inWord {
+			inWord = true
+			count++
+		}
+	}
+	return count
 }
 
 func parseMeta(n *html.Node, data *SEOData) {

@@ -26,7 +26,7 @@ The CLI uses [cobra](https://github.com/spf13/cobra) for commands and [viper](ht
 ### Data flow (root command)
 
 ```
-fetcher.Fetch(url) → parser.Parse(body) → rules.Evaluate(seoData) → display.Print*(...)
+fetcher.Fetch(url) → parser.ParseWithURL(body, url) → rules.Evaluate(seoData, fetchResult) → display.Print*(...)
 ```
 
 ### Packages
@@ -34,10 +34,10 @@ fetcher.Fetch(url) → parser.Parse(body) → rules.Evaluate(seoData) → displa
 - **`cmd/`** — Cobra command definitions. Each command file (`root.go`, `links.go`, `sitemap.go`, `upgrade.go`) wires together the internal packages. Commands handle their own JSON output formatting inline.
 - **`internal/fetcher/`** — HTTP client with `httptrace` timing (DNS, TCP, TLS, TTFB). Returns `fetcher.Result` with body, headers, timing, and redirect chain.
 - **`internal/parser/`** — Three parsers, each in its own file:
-  - `parser.go` — HTML head parsing → `SEOData` struct (meta tags, OG, Twitter, JSON-LD, headings, favicons). Walks `<head>` fully but only scans `<body>` for headings.
+  - `parser.go` — HTML parsing → `SEOData` struct. Walks `<head>` fully (meta tags, OG, Twitter, JSON-LD, favicons). `parseBody` walks `<body>` for headings (H1-H6 with hierarchy), images, content metrics (word count, text-to-HTML ratio), and link stats.
   - `links.go` — Extracts `<a>` hrefs, resolves relative URLs, deduplicates. `IsInternal()` compares hosts.
   - `sitemap.go` — XML sitemap/index parsing with validation (URL limits, lastmod format, duplicates, cross-domain, priority/changefreq values).
-- **`internal/rules/`** — SEO audit engine. `Evaluate()` runs all rule functions, each returning `[]Result` with category, severity (Pass/Info/Warning/Error), and message.
+- **`internal/rules/`** — SEO audit engine. `Evaluate()` takes `SEOData` + `fetcher.Result` and runs all rule functions, each returning `[]Result` with category, severity (Pass/Info/Warning/Error), and message. Rule categories: Title, Description, Canonical, Robots, Open Graph, Twitter Card, Technical, Headings, Structured Data, Images, Content, Redirects, Links.
 - **`internal/display/`** — Terminal output (`display.go`) with box-drawing and color via `fatih/color`. JSON output (`json.go`) with dedicated struct types that mirror the display layout.
 
 ### Key patterns

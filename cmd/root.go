@@ -80,7 +80,7 @@ func run(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to fetch %s: %w", url, err)
 	}
 
-	seoData, err := parser.Parse(result.Body)
+	seoData, err := parser.ParseWithURL(result.Body, result.FinalURL)
 	if err != nil {
 		return fmt.Errorf("failed to parse HTML: %w", err)
 	}
@@ -96,7 +96,7 @@ func run(cmd *cobra.Command, args []string) error {
 
 	var auditResults []rules.Result
 	if !noAudit {
-		auditResults = rules.Evaluate(seoData)
+		auditResults = rules.Evaluate(seoData, result)
 	}
 
 	if jsonOutput {
