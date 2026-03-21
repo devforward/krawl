@@ -50,3 +50,12 @@ fetcher.Fetch(url) → parser.ParseWithURL(body, url) → rules.Evaluate(seoData
 - The `links` command does concurrent HEAD requests with a semaphore for concurrency control, falling back to GET if HEAD is rejected.
 - Severity levels in `rules` package: `SeverityPass` (0), `SeverityInfo` (1), `SeverityWarning` (2), `SeverityError` (3).
 - JSON output structs are separate from internal data types — see `display/json.go` for the full JSON schema.
+
+## Releasing
+
+Releases are a two-step process — we create the release, CI builds and attaches binaries:
+
+1. **Create the release** (with notes) via `gh release create vX.Y.Z`
+2. **Push the tag** — CI (`build.yml`) triggers on the tag, builds cross-platform binaries (linux/darwin × amd64/arm64), and uploads them to the existing release via `gh release upload`
+
+**Important:** Do NOT let CI create the release. The workflow only builds and attaches binaries to a release that already exists. If the release doesn't exist when the tag is pushed, the upload step will fail. Always create the release first, then tag and push.
