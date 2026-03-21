@@ -31,7 +31,7 @@ fetcher.Fetch(url) → parser.ParseWithURL(body, url) → rules.Evaluate(seoData
 
 ### Packages
 
-- **`cmd/`** — Cobra command definitions. Each command file (`root.go`, `links.go`, `sitemap.go`, `upgrade.go`) wires together the internal packages. Commands handle their own JSON output formatting inline.
+- **`cmd/`** — Cobra command definitions. Each command file (`root.go`, `crawl.go`, `links.go`, `sitemap.go`, `upgrade.go`) wires together the internal packages. Commands handle their own JSON output formatting inline.
 - **`internal/fetcher/`** — HTTP client with `httptrace` timing (DNS, TCP, TLS, TTFB). Returns `fetcher.Result` with body, headers, timing, and redirect chain.
 - **`internal/parser/`** — Three parsers, each in its own file:
   - `parser.go` — HTML parsing → `SEOData` struct. Walks `<head>` fully (meta tags, OG, Twitter, JSON-LD, favicons). `parseBody` walks `<body>` for headings (H1-H6 with hierarchy), images, content metrics (word count, text-to-HTML ratio), and link stats.
@@ -46,6 +46,7 @@ fetcher.Fetch(url) → parser.ParseWithURL(body, url) → rules.Evaluate(seoData
 ### Key patterns
 
 - All commands follow the same pattern: fetch → parse → (optionally evaluate) → display or JSON encode.
+- The `crawl` command does BFS spidering with concurrent fetches, running the full audit on each page and detecting site-wide issues (duplicates, orphans).
 - The `links` command does concurrent HEAD requests with a semaphore for concurrency control, falling back to GET if HEAD is rejected.
 - Severity levels in `rules` package: `SeverityPass` (0), `SeverityInfo` (1), `SeverityWarning` (2), `SeverityError` (3).
 - JSON output structs are separate from internal data types — see `display/json.go` for the full JSON schema.

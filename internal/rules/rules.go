@@ -177,8 +177,8 @@ func checkOpenGraph(data *parser.SEOData) []Result {
 	check("og:url", data.OGURL, true, 120)
 	check("og:description", data.OGDescription, false, 220)
 
-	if data.OGTitle != "" && len(data.OGTitle) > 60 {
-		results = append(results, Result{cat, "og:title length", SeverityWarning, fmt.Sprintf("Too long (%d chars). Aim for under 60.", len(data.OGTitle))})
+	if data.OGTitle != "" && len(data.OGTitle) > 90 {
+		results = append(results, Result{cat, "og:title length", SeverityWarning, fmt.Sprintf("Too long (%d chars). May be truncated. Aim for under 90.", len(data.OGTitle))})
 	}
 	if data.OGDescription != "" && len(data.OGDescription) > 200 {
 		results = append(results, Result{cat, "og:description length", SeverityWarning, fmt.Sprintf("Too long (%d chars). Aim for under 200.", len(data.OGDescription))})
@@ -224,6 +224,10 @@ func checkTwitter(data *parser.SEOData) []Result {
 
 	if data.TwitterImage != "" && !strings.HasPrefix(data.TwitterImage, "https://") {
 		results = append(results, Result{cat, "twitter:image HTTPS", SeverityWarning, "twitter:image should use HTTPS"})
+	}
+
+	if data.TwitterDescription != "" && len(data.TwitterDescription) > 200 {
+		results = append(results, Result{cat, "twitter:description length", SeverityWarning, fmt.Sprintf("Too long (%d chars). May be truncated at 200.", len(data.TwitterDescription))})
 	}
 
 	if data.TwitterImage != "" && data.TwitterImageAlt == "" {

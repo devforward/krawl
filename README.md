@@ -27,6 +27,7 @@ krawl upgrade
 | Command | Description |
 |---------|-------------|
 | `krawl <url>` | SEO audit — meta tags, Open Graph, Twitter Cards, structured data |
+| `krawl crawl <url>` | Spider a site and audit multiple pages |
 | `krawl links <url>` | Check all internal and external links for broken URLs |
 | `krawl sitemap <url>` | Fetch and validate an XML sitemap |
 | `krawl upgrade` | Self-update to the latest release |
@@ -150,6 +151,20 @@ krawl https://devforward.com
 ────────────────────────────────────────────────────────────────────
 ```
 
+## Site Crawl
+
+```sh
+krawl crawl https://devforward.com
+krawl crawl -n 50 -d 5 https://devforward.com   # 50 pages, depth 5
+```
+
+Spiders a site by following internal links, runs the full SEO audit on each page, and reports site-wide issues:
+- Duplicate titles and descriptions across pages
+- Missing titles, descriptions, and canonicals
+- Orphan pages with no inbound internal links
+- Per-page error breakdown
+- Aggregated audit totals across all crawled pages
+
 ## Link Checker
 
 ```sh
@@ -262,6 +277,15 @@ krawl -s https://devforward.com
 | `-t, --timeout` | HTTP timeout (default 30s) |
 | `-u, --user-agent` | Custom User-Agent string |
 | `--config` | Path to config file |
+
+### `krawl crawl <url>`
+
+| Flag | Description |
+|------|-------------|
+| `-j, --json` | Output as JSON |
+| `-n, --max-pages` | Maximum number of pages to crawl (default 20) |
+| `-d, --depth` | Maximum link depth from start URL (default 3) |
+| `-c, --concurrency` | Number of concurrent fetches (default 5) |
 
 ### `krawl links <url>`
 

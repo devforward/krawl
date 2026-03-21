@@ -16,17 +16,14 @@ Planned features and enhancements for krawl.
 - Rich result eligibility: FAQ, HowTo, Article, Product, Breadcrumb checks against Google's requirements
 - Link quality: generic anchor text detection, external domain concentration, nofollow distribution, empty anchor text
 
+### `krawl crawl` Command
+- BFS spider with configurable `--max-pages`, `--depth`, `--concurrency`
+- Full SEO audit on each crawled page
+- Site-wide issue detection: duplicate titles/descriptions, missing titles/descriptions/canonicals, orphan pages
+- Per-page error breakdown and aggregated audit summary
+- JSON output with pages array and site-wide issues
+
 ## New Commands
-
-### `krawl crawl <url>`
-Spider a site up to N pages. Aggregate audit results across all pages. Detect:
-- Orphan pages (no internal links pointing to them)
-- Duplicate titles/descriptions across pages
-- Inconsistent canonical URLs
-- Internal link graph with crawl depth
-- Site-wide issue summary with per-page breakdown
-
-Flags: `--max-pages`, `--concurrency`, `--depth`, `--same-host`
 
 ### `krawl images <url>`
 Deep image audit for a single page:

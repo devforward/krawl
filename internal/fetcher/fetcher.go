@@ -40,9 +40,13 @@ func Fetch(url string, timeout time.Duration, userAgent string) (*Result, error)
 				return fmt.Errorf("too many redirects")
 			}
 			prev := via[len(via)-1]
+			statusCode := 0
+			if prev.Response != nil {
+				statusCode = prev.Response.StatusCode
+			}
 			result.Redirects = append(result.Redirects, Redirect{
 				URL:        prev.URL.String(),
-				StatusCode: prev.Response.StatusCode,
+				StatusCode: statusCode,
 			})
 			return nil
 		},
