@@ -2,29 +2,19 @@
 
 Planned features and enhancements for krawl.
 
-## Audit Rule Enhancements (Batch 2)
+## Completed
 
-Extend the existing rules engine with deeper analysis:
+### Audit Rules — Batch 1 (Body Parsing & Core Rules)
+- Heading hierarchy validation (H1-H6 skip detection)
+- Image audit (missing alt, missing dimensions)
+- Content metrics (word count, thin content, text-to-HTML ratio)
+- Redirect chain analysis (>2 hops, mixed HTTP/HTTPS)
+- Link metrics (internal/external breakdown, nofollow count, excessive links)
 
-### Schema.org Validation
-- Validate JSON-LD against schema.org required/recommended properties per `@type`
-- Article: `headline`, `datePublished`, `author`, `image`
-- Product: `name`, `offers` (with `price`, `priceCurrency`)
-- LocalBusiness: `name`, `address`, `telephone`
-- FAQPage: `mainEntity` with `Question`/`acceptedAnswer` pairs
-- BreadcrumbList: `itemListElement` with `position`, `name`, `item`
-
-### Rich Result Eligibility
-- Check if structured data meets Google's specific requirements for rich results
-- FAQ rich result: valid FAQPage schema with properly nested Q&A
-- HowTo rich result: `step` elements with `text` or `name`+`itemListElement`
-- Article rich result: required fields plus `dateModified`, `publisher` with logo
-- Product rich result: `aggregateRating` or `review` for star ratings in SERPs
-
-### Link Quality
-- Outbound link audit: count links by domain, flag concentration to single external domain
-- Nofollow distribution: warn if all external links are nofollow (looks unnatural)
-- Anchor text analysis: flag generic anchors ("click here", "read more") that waste link context
+### Audit Rules — Batch 2 (Schema & Link Quality)
+- Schema.org validation: required/recommended properties per @type (Article, Product, LocalBusiness, Organization, Person, FAQPage, HowTo, BreadcrumbList, WebSite, WebPage, Event, Recipe, VideoObject)
+- Rich result eligibility: FAQ, HowTo, Article, Product, Breadcrumb checks against Google's requirements
+- Link quality: generic anchor text detection, external domain concentration, nofollow distribution, empty anchor text
 
 ## New Commands
 

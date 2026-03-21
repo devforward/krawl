@@ -37,7 +37,10 @@ fetcher.Fetch(url) → parser.ParseWithURL(body, url) → rules.Evaluate(seoData
   - `parser.go` — HTML parsing → `SEOData` struct. Walks `<head>` fully (meta tags, OG, Twitter, JSON-LD, favicons). `parseBody` walks `<body>` for headings (H1-H6 with hierarchy), images, content metrics (word count, text-to-HTML ratio), and link stats.
   - `links.go` — Extracts `<a>` hrefs, resolves relative URLs, deduplicates. `IsInternal()` compares hosts.
   - `sitemap.go` — XML sitemap/index parsing with validation (URL limits, lastmod format, duplicates, cross-domain, priority/changefreq values).
-- **`internal/rules/`** — SEO audit engine. `Evaluate()` takes `SEOData` + `fetcher.Result` and runs all rule functions, each returning `[]Result` with category, severity (Pass/Info/Warning/Error), and message. Rule categories: Title, Description, Canonical, Robots, Open Graph, Twitter Card, Technical, Headings, Structured Data, Images, Content, Redirects, Links.
+- **`internal/rules/`** — SEO audit engine. `Evaluate()` takes `SEOData` + `fetcher.Result` and runs all rule functions, each returning `[]Result` with category, severity (Pass/Info/Warning/Error), and message. Rules are split across files:
+  - `rules.go` — Core rules: Title, Description, Canonical, Robots, Open Graph, Twitter Card, Technical, Headings, Structured Data, Images, Content, Redirects, Links.
+  - `schema.go` — Schema.org validation (required/recommended properties per @type) and rich result eligibility (FAQ, HowTo, Article, Product, Breadcrumb).
+  - `links.go` — Link quality: generic anchor text detection, external domain concentration, nofollow distribution, empty anchors.
 - **`internal/display/`** — Terminal output (`display.go`) with box-drawing and color via `fatih/color`. JSON output (`json.go`) with dedicated struct types that mirror the display layout.
 
 ### Key patterns

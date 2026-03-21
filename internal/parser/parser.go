@@ -64,6 +64,7 @@ type SEOData struct {
 	ExternalLinks    int
 	NofollowLinks    int
 	TotalLinks       int
+	BodyLinks        []BodyLink
 
 	// Raw collections
 	MetaTags      []MetaTag
@@ -85,6 +86,14 @@ type ImageTag struct {
 	Width   string
 	Height  string
 	Loading string
+}
+
+type BodyLink struct {
+	Href       string
+	Text       string
+	Rel        string
+	IsInternal bool
+	IsNofollow bool
 }
 
 type HreflangEntry struct {
@@ -246,17 +255,28 @@ func parseBodyLink(n *html.Node, data *SEOData) {
 	}
 
 	data.TotalLinks++
-	if strings.Contains(rel, "nofollow") {
+	isNofollow := strings.Contains(rel, "nofollow")
+	if isNofollow {
 		data.NofollowLinks++
 	}
 
+	internal := false
 	if data.pageURL != "" {
-		if isInternalLink(href, data.pageURL) {
+		internal = isInternalLink(href, data.pageURL)
+		if internal {
 			data.InternalLinks++
 		} else {
 			data.ExternalLinks++
 		}
 	}
+
+	data.BodyLinks = append(data.BodyLinks, BodyLink{
+		Href:       href,
+		Text:       getTextContent(n),
+		Rel:        rel,
+		IsInternal: internal,
+		IsNofollow: isNofollow,
+	})
 }
 
 func isInternalLink(href, pageURL string) bool {

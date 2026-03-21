@@ -55,6 +55,9 @@ func Evaluate(data *parser.SEOData, fetchResult *fetcher.Result) []Result {
 	results = append(results, checkContent(data)...)
 	results = append(results, checkRedirects(fetchResult)...)
 	results = append(results, checkLinkMetrics(data)...)
+	results = append(results, checkSchemaValidation(data)...)
+	results = append(results, checkRichResults(data)...)
+	results = append(results, checkLinkQuality(data)...)
 
 	return results
 }

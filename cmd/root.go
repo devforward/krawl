@@ -88,6 +88,10 @@ func run(cmd *cobra.Command, args []string) error {
 	schema, _ := cmd.Flags().GetBool("schema")
 	if schema {
 		display.PrintJSONLDDetail(seoData)
+		schemaResults := rules.EvaluateSchema(seoData)
+		if len(schemaResults) > 0 {
+			display.PrintRules(schemaResults)
+		}
 		return nil
 	}
 

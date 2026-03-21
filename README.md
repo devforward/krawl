@@ -243,7 +243,7 @@ krawl sitemap -j https://example.com/sitemap.xml
 
 ## Schema Detail
 
-Use `-s` / `--schema` to see a full breakdown of JSON-LD structured data with nested entities:
+Use `-s` / `--schema` to see a full breakdown of JSON-LD structured data with nested entities, plus schema.org property validation and rich result eligibility checks:
 
 ```sh
 krawl -s https://devforward.com
@@ -290,7 +290,7 @@ krawl looks for `.krawl.yaml` in your home directory or current directory. Setti
 
 **Twitter Cards** — twitter:card (valid type), twitter:title, twitter:description, twitter:image (HTTPS), twitter:image:alt
 
-**Structured Data** — JSON-LD detection, @context and @type validation, @graph traversal
+**Structured Data** — JSON-LD detection, @context and @type validation, @graph traversal, schema.org property validation (required/recommended per type), rich result eligibility checks (FAQ, HowTo, Article, Product, Breadcrumb)
 
 **Headings** — H1 existence and count (flags multiple H1s), heading hierarchy validation (flags skipped levels like H2 → H4)
 
@@ -302,7 +302,7 @@ krawl looks for `.krawl.yaml` in your home directory or current directory. Setti
 
 **Redirects** — redirect chain length (flags >2 hops), mixed HTTP/HTTPS redirect detection
 
-**Links** — internal/external link breakdown, nofollow audit, excessive link count warning, internal and external link checking with concurrent HEAD requests
+**Links** — internal/external link breakdown, nofollow audit, excessive link count warning, generic anchor text detection, external domain concentration, empty anchor text, internal and external link checking with concurrent HEAD requests
 
 **Sitemaps** — XML sitemap validation, sitemap index support, URL/lastmod/changefreq/priority checks, robots.txt declaration
 
