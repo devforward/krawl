@@ -154,15 +154,16 @@ krawl https://devforward.com
 ## Site Crawl
 
 ```sh
-krawl crawl https://devforward.com
-krawl crawl -n 50 -d 5 https://devforward.com   # 50 pages, depth 5
+krawl crawl https://devforward.com                        # spider from URL
+krawl crawl -n 50 -d 5 https://devforward.com             # 50 pages, depth 5
+krawl crawl https://devforward.com/sitemap.xml             # crawl sitemap URLs
 ```
 
-Spiders a site by following internal links, runs the full SEO audit on each page, and reports site-wide issues:
+Spiders a site by following internal links, or crawls URLs from a sitemap (auto-detected). Runs the full SEO audit on each page and reports site-wide issues:
 - Duplicate titles and descriptions across pages
 - Missing titles, descriptions, and canonicals
-- Orphan pages with no inbound internal links
-- Per-page error breakdown
+- Orphan pages with no inbound internal links (spider mode)
+- Per-page error and warning breakdown
 - Aggregated audit totals across all crawled pages
 
 ## Link Checker

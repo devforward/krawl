@@ -125,34 +125,104 @@ func runCrawl(cmd *cobra.Command, args []string) error {
 
 	visited := make(map[string]bool)
 	var pages []crawlPage
-	queue := []queueItem{{url: startURL, depth: 0}}
-	visited[normalizeURL(startURL)] = true
 
 	// Track inbound links for orphan detection
-	inboundLinks := make(map[string]int) // url -> count of pages linking to it
+	inboundLinks := make(map[string]int)
 
 	sem := make(chan struct{}, concurrency)
 	var mu sync.Mutex
+
+	// Fetch the start URL first to detect if it's a sitemap
+	sitemapMode := false
+	var queue []queueItem
+
+	initialResult, err := fetcher.Fetch(startURL, timeout, userAgent)
+	if err != nil {
+		return fmt.Errorf("failed to fetch %s: %w", startURL, err)
+	}
+
+	if isSitemapResponse(initialResult) {
+		sitemapMode = true
+		report, err := parser.ParseSitemap(initialResult.Body, initialResult.FinalURL)
+		if err != nil {
+			return fmt.Errorf("failed to parse sitemap: %w", err)
+		}
+
+		if report.IsIndex {
+			// Sitemap index: collect URLs from all child sitemaps
+			if !jsonOutput {
+				dim := color.New(color.Faint)
+				fmt.Printf("  Sitemap index with %d child sitemaps, fetching...\n", len(report.Sitemaps))
+				dim.Println()
+			}
+			for _, s := range report.Sitemaps {
+				childResult, err := fetcher.Fetch(s.Loc, timeout, userAgent)
+				if err != nil {
+					continue
+				}
+				childReport, err := parser.ParseSitemap(childResult.Body, childResult.FinalURL)
+				if err != nil {
+					continue
+				}
+				for _, u := range childReport.URLs {
+					norm := normalizeURL(u.Loc)
+					if !visited[norm] {
+						visited[norm] = true
+						queue = append(queue, queueItem{url: u.Loc, depth: 0})
+					}
+				}
+			}
+		} else {
+			for _, u := range report.URLs {
+				norm := normalizeURL(u.Loc)
+				if !visited[norm] {
+					visited[norm] = true
+					queue = append(queue, queueItem{url: u.Loc, depth: 0})
+				}
+			}
+		}
+
+		// Apply max-pages limit to sitemap URLs
+		if len(queue) > maxPages {
+			queue = queue[:maxPages]
+		}
+	} else {
+		queue = []queueItem{{url: startURL, depth: 0}}
+		visited[normalizeURL(startURL)] = true
+	}
+
+	totalTarget := len(queue)
+	if !sitemapMode {
+		totalTarget = maxPages
+	}
 
 	if !jsonOutput {
 		bold := color.New(color.Bold)
 		fmt.Println()
 		bold.Println("╔══════════════════════════════════════════════════════════════════╗")
-		bold.Printf("║  Crawl: %-53s║\n", truncateStr(startURL, 53))
+		if sitemapMode {
+			bold.Printf("║  Crawl (sitemap): %-44s║\n", truncateStr(startURL, 44))
+		} else {
+			bold.Printf("║  Crawl: %-53s║\n", truncateStr(startURL, 53))
+		}
 		bold.Println("╚══════════════════════════════════════════════════════════════════╝")
 		fmt.Println()
-		fmt.Printf("  Max pages: %d, Max depth: %d, Concurrency: %d\n", maxPages, maxDepth, concurrency)
+		if sitemapMode {
+			fmt.Printf("  URLs from sitemap: %d, Concurrency: %d\n", totalTarget, concurrency)
+		} else {
+			fmt.Printf("  Max pages: %d, Max depth: %d, Concurrency: %d\n", maxPages, maxDepth, concurrency)
+		}
 		fmt.Println()
 	}
 
-	for len(queue) > 0 && len(pages) < maxPages {
+	for len(queue) > 0 && len(pages) < totalTarget {
 		// Determine batch size
 		batchSize := concurrency
 		if batchSize > len(queue) {
 			batchSize = len(queue)
 		}
-		if batchSize > maxPages-len(pages) {
-			batchSize = maxPages - len(pages)
+		if batchSize > totalTarget-len(pages) {
+			batchSize = totalTarget - len(pages)
 		}
 
 		batch := queue[:batchSize]
@@ -178,11 +248,11 @@ func runCrawl(cmd *cobra.Command, args []string) error {
 			pages = append(pages, page)
 
 			if !jsonOutput {
-				printCrawlProgress(page, len(pages), maxPages, baseHost)
+				printCrawlProgress(page, len(pages), totalTarget, baseHost)
 			}
 
-			// Queue discovered internal links
-			if page.Error == "" && page.SEOData != nil {
+			// In spider mode, queue discovered internal links
+			if !sitemapMode && page.Error == "" && page.SEOData != nil {
 				for _, link := range page.InternalURLs {
 					normalized := normalizeURL(link)
 					linkParsed, err := url.Parse(link)
@@ -215,6 +285,25 @@ func runCrawl(cmd *cobra.Command, args []string) error {
 
 	printCrawlSummary(pages, summary, baseHost)
 	return nil
+}
+
+// isSitemapResponse checks if a fetch result looks like an XML sitemap.
+func isSitemapResponse(r *fetcher.Result) bool {
+	ct := strings.ToLower(r.ContentType)
+	if strings.Contains(ct, "xml") {
+		return true
+	}
+	// Check body prefix for XML sitemap markers
+	body := strings.TrimSpace(string(r.Body[:min(len(r.Body), 200)]))
+	body = strings.ToLower(body)
+	return strings.Contains(body, "<urlset") || strings.Contains(body, "<sitemapindex")
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
 
 func crawlSinglePage(pageURL string, depth int, timeout time.Duration, userAgent string) crawlPage {
@@ -322,7 +411,8 @@ func buildCrawlSummary(pages []crawlPage, inboundLinks map[string]int, visited m
 
 	// Find orphan pages: pages we crawled that have no inbound links from other crawled pages
 	// (excluding the start page which naturally has no inbound from the crawl)
-	if len(pages) > 1 {
+	// Only meaningful in spider mode where we track inbound links
+	if len(pages) > 1 && len(inboundLinks) > 0 {
 		startNorm := normalizeURL(pages[0].URL)
 		for _, page := range pages {
 			if page.Error != "" {
